@@ -22,7 +22,7 @@ class MicropostsController < ApplicationController
   end
 
   # POST /microposts
-  # POST /microposts.json
+  # j /microposts.json
   def create
     @micropost = Micropost.new(micropost_params)
 
