@@ -1,17 +1,22 @@
 class User < ActiveRecord::Base
+
   has_many :microposts
+
   # before_save { self.email = email.downcase }
-  attr_accessor :remember_token, :activation_token
   # before_save { email.downcase! }
+  attr_accessor :remember_token, :activation_token, :reset_token
   before_save :downcase_email
   before_create :create_activation_digest
+
   validates :name, presence: true, length: { maximum: 50 }
+
   VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
   validates :email, presence: true,
                     length: { maximum: 255 },
                     format: { with: VALID_EMAIL_REGEX },
                     # uniqueness: true,
                     uniqueness: { case_sensitive: false }
+
 
   has_secure_password
   validates :password, presence: true, length: { minimum: 3 }, allow_nil: true
@@ -45,6 +50,31 @@ class User < ActiveRecord::Base
     update_attribute(:remember_digest, nil)
   end
 
+  def activate
+    update_attribute(:activated,    true)
+    update_attribute(:activated_at, Time.zone.now)
+  end
+
+  def send_activation_email
+    UserMailer.account_activation(self).deliver_now
+  end
+
+  def create_reset_digest
+    self.reset_token = User.new_token
+    update_attribute(:reset_digest,  User.digest(reset_token))
+    update_attribute(:reset_sent_at, Time.zone.now)
+  end
+
+  def send_password_reset_email
+    UserMailer.password_reset(self).deliver_now
+  end
+
+  def password_reset_expired?
+    reset_sent_at < 2.hours.ago
+  end
+
+  private
+
   def downcase_email
     self.email = email.downcase
   end
@@ -54,13 +84,4 @@ class User < ActiveRecord::Base
     self.activation_digest = User.digest(activation_token)
   end
 
-  def activate
-    update_attribute(:activated,    true)
-    update_attribute(:activated_at, Time.zone.now)
-  end
-
-  def send_activation_email
-    UserMailer.account_activation(self).deliver_now
-  end
-  
 end
