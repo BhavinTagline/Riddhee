@@ -39,3 +39,10 @@ User.create!(name:  "Example User",
                end
 
 end
+
+users = User.all
+user  = users.first
+following = users[2..5]
+followers = users[3..4]
+following.each { |followed| user.follow(followed) }
+followers.each { |follower| follower.follow(user) }
